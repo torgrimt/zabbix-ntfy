@@ -12,7 +12,7 @@ zabbix_export:
           value: 'your-ntfy.net/topic'
       script: |
         try {
-                    Zabbix.log(3, '[ ntfy Webhook ] Executed with params: ' + value);
+                    Zabbix.log(4, '[ ntfy Webhook ] Executed with params: ' + value);
                     var params = JSON.parse(value);
                     
                     if (!params.URL) {
