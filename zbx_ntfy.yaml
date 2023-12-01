@@ -10,6 +10,10 @@ zabbix_export:
           value: '{ALERT.SUBJECT}'
         - name: URL
           value: 'your-ntfy.net/topic'
+        - name: username
+          value:
+        - name: password
+          value:
       script: |
         try {
                     Zabbix.log(4, '[ ntfy Webhook ] Executed with params: ' + value);
@@ -26,6 +30,8 @@ zabbix_export:
                     }
         
                     request.addHeader('Title: Zabbix');
+                    if (params.username && params.password)
+                        request.setHttpAuth(HTTPAUTH_BASIC, params.username, params.password)
                     response = request.post(params.URL, params.Message);
                     return true;
         
