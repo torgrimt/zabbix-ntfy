@@ -5,8 +5,13 @@ Seems like noone added support for ntfy.sh into zabbix, so I spent some time to 
 Might aswell share it. Pull requests are welcome.
 
 Download the zbx_ntfy.yaml file, go to Alerts -> Mediatypes and click import.
-Change the URL field to your server and click enabled.
-Fill in username and password if you run ntfy.sh behind a reverse proxy with basic authentication enabled.
+You need to create macros with ntfy url, optional username and password.
+Go to: Administration -> macros. Here you need to create those 3 macros named
+NTFY.URL
+NTFY.USER
+NTFY.PASS
+
+Username and password is if you use basic auth. Should work without them if you dont have it.
 
 Enable "Report problems to Zabbix administrators" in Alerts -> Actions -> "Trigger Actions"
 
