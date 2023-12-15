@@ -9,11 +9,11 @@ zabbix_export:
         - name: Subject
           value: '{ALERT.SUBJECT}'
         - name: URL
-          value: 'your-ntfy.net/topic'
+          value: '{NTFY.URL}'
         - name: username
-          value:
+          value: '{NTFY.USER}'
         - name: password
-          value:
+          value: '{NTFY.PASS}'
       script: |
         try {
                     Zabbix.log(4, '[ ntfy Webhook ] Executed with params: ' + value);
