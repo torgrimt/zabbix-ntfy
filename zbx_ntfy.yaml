@@ -10,36 +10,42 @@ zabbix_export:
           value: '{ALERT.SUBJECT}'
         - name: URL
           value: '{NTFY.URL}'
-        - name: username
+        - name: Token
+          value: '{NTFY.TOKEN}'
+        - name: Username
           value: '{NTFY.USER}'
-        - name: password
+        - name: Password
           value: '{NTFY.PASS}'
       script: |
         try {
-                    Zabbix.log(4, '[ ntfy Webhook ] Executed with params: ' + value);
-                    var params = JSON.parse(value);
-                    
-                    if (!params.URL) {
-                        throw 'Cannot get ntfy url!';
-                    }
-                  
-                    var response, request = new HttpRequest();
-                    // Check for proxy
-                    if (typeof params.HTTPProxy === 'string' && params.HTTPProxy.trim() !== '') {
-                        request.setProxy(params.HTTPProxy);
-                    }
-        
-                    request.addHeader('Title: Zabbix');
-                    if (params.username && params.password)
-                        request.setHttpAuth(HTTPAUTH_BASIC, params.username, params.password)
-                    response = request.post(params.URL, params.Message);
-                    return true;
-        
-                }
-                catch (error) {
-                    Zabbix.log(3, '[ ntfy webhook ] notification failed: ' + error);
-                    throw 'Sending failed: ' + error;
-                }
+            Zabbix.log(4, '[ ntfy Webhook ] Executed with params: ' + value);
+            var params = JSON.parse(value);
+            
+            if (!params.URL) {
+                throw 'Cannot get ntfy url!';
+            }
+          
+            var response, request = new HttpRequest();
+            // Check for proxy
+            if (typeof params.HTTPProxy === 'string' && params.HTTPProxy.trim() !== '') {
+                request.setProxy(params.HTTPProxy);
+            }
+
+            request.addHeader('Title: Zabbix');
+            if (params.Token) {
+                request.addHeader('Authorization: Bearer ' + params.Token);
+            } else if (params.Username && params.Password) {
+                request.setHttpAuth(HTTPAUTH_BASIC, params.Username, params.Password);
+            } else {
+                throw 'No authentication method provided!';
+            }
+            response = request.post(params.URL, params.Message);
+            return true;
+        }
+        catch (error) {
+            Zabbix.log(3, '[ ntfy webhook ] notification failed: ' + error);
+            throw 'Sending failed: ' + error;
+        }
       message_templates:
         - event_source: TRIGGERS
           operation_mode: PROBLEM
