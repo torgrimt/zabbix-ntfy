@@ -36,9 +36,8 @@ zabbix_export:
                 request.addHeader('Authorization: Bearer ' + params.Token);
             } else if (params.Username && params.Password) {
                 request.setHttpAuth(HTTPAUTH_BASIC, params.Username, params.Password);
-            } else {
-                throw 'No authentication method provided!';
-            }
+            } 
+            
             response = request.post(params.URL, params.Message);
             return true;
         }
