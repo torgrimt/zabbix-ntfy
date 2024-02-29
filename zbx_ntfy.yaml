@@ -6,16 +6,18 @@ zabbix_export:
       parameters:
         - name: Message
           value: '{ALERT.MESSAGE}'
+        - name: Nseverity
+          value: '{EVENT.NSEVERITY}'
+        - name: Password
+          value: '{$NTFY.PASS}'
         - name: Subject
           value: '{ALERT.SUBJECT}'
-        - name: URL
-          value: '{NTFY.URL}'
         - name: Token
-          value: '{NTFY.TOKEN}'
+          value: '{$NTFY.TOKEN}'
+        - name: URL
+          value: '{$NTFY.URL}'
         - name: Username
-          value: '{NTFY.USER}'
-        - name: Password
-          value: '{NTFY.PASS}'
+          value: '{$NTFY.USER}'
       script: |
         try {
             Zabbix.log(4, '[ ntfy Webhook ] Executed with params: ' + value);
@@ -32,6 +34,12 @@ zabbix_export:
             }
 
             request.addHeader('Title: Zabbix');
+            if (params.Nseverity === 0) {
+              request.addHeader('X-Priority: 3');
+            } else {
+              request.addHeader('X-Priority: ' + params.Nseverity);
+            }
+        
             if (params.Token) {
                 request.addHeader('Authorization: Bearer ' + params.Token);
             } else if (params.Username && params.Password) {
