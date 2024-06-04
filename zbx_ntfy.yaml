@@ -19,40 +19,45 @@ zabbix_export:
         - name: Username
           value: '{$NTFY.USER}'
       script: |
-        try {
-            Zabbix.log(4, '[ ntfy Webhook ] Executed with params: ' + value);
-            var params = JSON.parse(value);
-            
-            if (!params.URL) {
-                throw 'Cannot get ntfy url!';
-            }
-          
-            var response, request = new HttpRequest();
-            // Check for proxy
-            if (typeof params.HTTPProxy === 'string' && params.HTTPProxy.trim() !== '') {
-                request.setProxy(params.HTTPProxy);
-            }
+      try {
+      Zabbix.log(4, '[ ntfy Webhook ] Executed with params: ' + value);
+      var params = JSON.parse(value);
+    
+      if (!params.URL) {
+        throw 'Cannot get ntfy url!';
+      } else {
+        var urlWithTopic = params.URL.endsWith('/') ? params.URL + params.Topic : params.URL + '/' + params.Topic;
+      }
 
-            request.addHeader('Title: Zabbix');
-            if (params.Nseverity === 0) {
-              request.addHeader('X-Priority: 3');
-            } else {
-              request.addHeader('X-Priority: ' + params.Nseverity);
-            }
-        
-            if (params.Token) {
-                request.addHeader('Authorization: Bearer ' + params.Token);
-            } else if (params.Username && params.Password) {
-                request.setHttpAuth(HTTPAUTH_BASIC, params.Username, params.Password);
-            } 
-            
-            response = request.post(params.URL, params.Message);
-            return true;
-        }
-        catch (error) {
-            Zabbix.log(3, '[ ntfy webhook ] notification failed: ' + error);
-            throw 'Sending failed: ' + error;
-        }
+      var response, request = new HttpRequest();
+      // Check for proxy
+      if (typeof params.HTTPProxy === 'string' && params.HTTPProxy.trim() !== '') {
+          request.setProxy(params.HTTPProxy);
+      }
+
+      // Headers
+      request.addHeader('Content-Type: text/plain');
+      request.addHeader('Title: ' + params.AlertSubject);
+      if (params.Nseverity === 0) {
+          request.addHeader('X-Priority: 3');
+      } else {
+          request.addHeader('X-Priority: ' + params.Nseverity);
+      }
+
+      if (params.Token) {
+          request.addHeader('Authorization: Bearer ' + params.Token);
+      } else if (params.Username && params.Password) {
+          request.setHttpAuth(HTTPAUTH_BASIC, params.Username, params.Password);
+      } 
+
+      // Send the message as plain text
+      response = request.post(urlWithTopic, params.Message);
+      return true;
+  }
+catch (error) {
+    Zabbix.log(3, '[ ntfy webhook ] notification failed: ' + error);
+    throw 'Sending failed: ' + error;
+}
       message_templates:
         - event_source: TRIGGERS
           operation_mode: PROBLEM
