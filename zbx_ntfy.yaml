@@ -4,50 +4,67 @@ zabbix_export:
     - name: ntfy.sh
       type: WEBHOOK
       parameters:
+        - name: Subject
+          value: '{ALERT.SUBJECT}'
         - name: Message
           value: '{ALERT.MESSAGE}'
         - name: Nseverity
           value: '{EVENT.NSEVERITY}'
+        - name: Username
+          value: '{$NTFY.USER}'
         - name: Password
           value: '{$NTFY.PASS}'
-        - name: Subject
-          value: '{ALERT.SUBJECT}'
         - name: Token
           value: '{$NTFY.TOKEN}'
         - name: URL
           value: '{$NTFY.URL}'
-        - name: Username
-          value: '{$NTFY.USER}'
+        - name: Topic
+          value: '{$ALERT.SENDTO}'
       script: |
         try {
-            Zabbix.log(4, '[ ntfy Webhook ] Executed with params: ' + value);
-            var params = JSON.parse(value);
-            
-            if (!params.URL) {
-                throw 'Cannot get ntfy url!';
-            }
+          Zabbix.log(4, '[ ntfy Webhook ] Executed with params: ' + value);
+          var params = JSON.parse(value);
           
-            var response, request = new HttpRequest();
-            // Check for proxy
-            if (typeof params.HTTPProxy === 'string' && params.HTTPProxy.trim() !== '') {
-                request.setProxy(params.HTTPProxy);
-            }
-
-            request.addHeader('Title: Zabbix');
-            if (params.Nseverity === 0) {
-              request.addHeader('X-Priority: 3');
-            } else {
-              request.addHeader('X-Priority: ' + params.Nseverity);
-            }
+          if (!params.URL) {
+              throw 'Cannot get ntfy url!';
+          }
         
-            if (params.Token) {
-                request.addHeader('Authorization: Bearer ' + params.Token);
-            } else if (params.Username && params.Password) {
-                request.setHttpAuth(HTTPAUTH_BASIC, params.Username, params.Password);
-            } 
-            
-            response = request.post(params.URL, params.Message);
-            return true;
+          var response, request = new HttpRequest();
+          // Check for proxy
+          if (typeof params.HTTPProxy === 'string' && params.HTTPProxy.trim() !== '') {
+              request.setProxy(params.HTTPProxy);
+          }
+
+          if (params.Subject && params.Subject !== '') {
+              request.addHeader('Title: ' + params.Subject);
+          } else {
+              request.addHeader('Title: Zabbix');
+          }
+
+          //make sure severity is a number (helpful when testing)
+          if (isNaN(parseInt(params.Nseverity))) {
+              params.Nseverity = 0;
+          }
+
+          if (params.Nseverity === 0) {
+            request.addHeader('X-Priority: 3');
+          } else {
+            request.addHeader('X-Priority: ' + params.Nseverity);
+          }
+
+          if (params.Token && params.Token !== '') {
+              request.addHeader('Authorization: Bearer ' + params.Token);
+          } else if (params.Username && params.Password && params.Username !== '' && params.Password !== '') {
+              request.setHttpAuth(HTTPAUTH_BASIC, params.Username, params.Password);
+          }
+
+          //if a topic is provided, include this in the URL, we assume that the Macro would just be the server, not including a topic
+          if (params.Topic && params.Topic !== '') {
+              params.URL = params.URL + '/' + params.Topic;
+          }
+          
+          response = request.post(params.URL, params.Message);
+          return true;
         }
         catch (error) {
             Zabbix.log(3, '[ ntfy webhook ] notification failed: ' + error);
