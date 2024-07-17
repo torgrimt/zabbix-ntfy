@@ -12,8 +12,6 @@ Go to: *Administration -> Macros* and create Macros:
 - `{$NTFY.URL}` The URL to send NTFY requests to. Just `https://ntfy.sh` if using the main instance.
 - `{$ALERT.SENDTO}` The NTFY Topic to send the request to.
 - `{$ZABBIX.URL}` The URL to your Zabbix instance to include a clickable link in the notification (optional).
-
-
 - `{$NTFY.USER}` The username of the NTFY account to use (optional - basic authentication).
 - `{$NTFY.PASS}` The password of the NTFY account to use (optional - basic authentication).
 - `{$NTFY.TOKEN}` The token created for the NTFY account to use (optional - token authentication).
