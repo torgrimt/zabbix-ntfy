@@ -18,9 +18,14 @@ Go to: *Administration -> Macros* and create Macros:
 - `{$NTFY.TOKEN}` The token created for the NTFY account to use (optional - token authentication).
 
 Enable a trigger action to use the NTFY Media Type: *Alerts -> Actions -> Trigger Actions*
+Enable a trigger action to use the NTFY Media Type: *Alerts -> Actions -> Trigger Actions*
 
 Go to *Users -> Users* and add the ntfy.sh Media Type to your user.
+Go to *Users -> Users* and add the ntfy.sh Media Type to your user.
 
+## Customization
+### Message Priority
+Priorities are, by default, based on the Zabbix Triggers priority. To adjust the levels, go to *Alerts -> Media Types -> ntfy.sh* and adjust the `Priority_*` parameters to your liking. These options match the [NTFY API](https://docs.ntfy.sh/publish/#message-priority).
 ## Customization
 ### Message Priority
 Priorities are, by default, based on the Zabbix Triggers priority. To adjust the levels, go to *Alerts -> Media Types -> ntfy.sh* and adjust the `Priority_*` parameters to your liking. These options match the [NTFY API](https://docs.ntfy.sh/publish/#message-priority).
