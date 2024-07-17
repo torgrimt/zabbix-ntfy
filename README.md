@@ -4,17 +4,23 @@ Mediatype to add support for ntfy.sh services
 Seems like noone added support for ntfy.sh into zabbix, so I spent some time to get it working myself.
 Might aswell share it. Pull requests are welcome.
 
-Download the zbx_ntfy.yaml file, go to Alerts -> Mediatypes and click import.
-You need to create macros with ntfy url, optional username and password.
-Go to: Administration -> macros. Here you need to create those 3 macros named
-NTFY.URL
-NTFY.USER
-NTFY.PASS
+## Setup
+Download the zbx_ntfy.yaml file, go to *Alerts -> Mediatypes* and click **Import**.
 
-Username and password is if you use basic auth. Should work without them if you dont have it.
+Go to: *Administration -> Macros* and create Macros:
 
-Enable "Report problems to Zabbix administrators" in Alerts -> Actions -> "Trigger Actions"
+- `{$NTFY.URL}` The URL to send NTFY requests to. Just `https://ntfy.sh` if using the main instance.
+- `{$ALERT.SENDTO}` The NTFY Topic to send the request to.
+- `{$ZABBIX.URL}` The URL to your Zabbix instance to include a clickable link in the notification (optional).
 
-Go to Users -> Users and add the ntfy.sh mediatype to your user.
+- `{$NTFY.USER}` The username of the NTFY account to use (optional - basic authentication).
+- `{$NTFY.PASS}` The password of the NTFY account to use (optional - basic authentication).
+- `{$NTFY.TOKEN}` The token created for the NTFY account to use (optional - token authentication).
 
+Enable a trigger action to use the NTFY Media Type: *Alerts -> Actions -> Trigger Actions*
 
+Go to *Users -> Users* and add the ntfy.sh Media Type to your user.
+
+## Customization
+### Message Priority
+Priorities are, by default, based on the Zabbix Triggers priority. To adjust the levels, go to *Alerts -> Media Types -> ntfy.sh* and adjust the `Priority_*` parameters to your liking. These options match the [NTFY API](https://docs.ntfy.sh/publish/#message-priority).
