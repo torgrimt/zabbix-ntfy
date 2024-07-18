@@ -17,10 +17,8 @@ Go to: *Administration -> Macros* and create Macros:
 - `{$NTFY.TOKEN}` The token created for the NTFY account to use (optional - token authentication).
 
 Enable a trigger action to use the NTFY Media Type: *Alerts -> Actions -> Trigger Actions*
-Enable a trigger action to use the NTFY Media Type: *Alerts -> Actions -> Trigger Actions*
 
-Go to *Users -> Users* and add the ntfy.sh Media Type to your user.
-Go to *Users -> Users* and add the ntfy.sh Media Type to your user.
+Go to *Users -> Users* and add the ntfy.sh Media Type to your user. The *Send To* field needs to be populated, but isn't used for anything.
 
 ## Customization
 ### Message Priority
