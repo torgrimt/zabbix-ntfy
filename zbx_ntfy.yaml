@@ -1,29 +1,51 @@
 zabbix_export:
-  version: '6.4'
+  version: '7.0'
   media_types:
     - name: ntfy.sh
       type: WEBHOOK
       parameters:
-        - name: Subject
-          value: '{ALERT.SUBJECT}'
         - name: Message
           value: '{ALERT.MESSAGE}'
-        - name: Nseverity
-          value: '{EVENT.NSEVERITY}'
         - name: Username
           value: '{$NTFY.USER}'
         - name: Password
           value: '{$NTFY.PASS}'
+        - name: Priority_average
+          value: default
+        - name: Priority_disaster
+          value: max
+        - name: Priority_high
+          value: high
+        - name: Priority_information
+          value: min
+        - name: Priority_not_classified
+          value: low
+        - name: Priority_resolved
+          value: low
+        - name: Priority_warning
+          value: low
+        - name: Subject
+          value: '{ALERT.SUBJECT}'
         - name: Token
           value: '{$NTFY.TOKEN}'
         - name: URL
-          value: '{$NTFY.URL}'
-        - name: Topic
           value: '{$ALERT.SENDTO}'
+        - name: ZabbixURL
+          value: '{$ZABBIX.URL}'
+        - name: Nseverity
+          value: '{EVENT.NSEVERITY}'
       script: |
         try {
           Zabbix.log(4, '[ ntfy Webhook ] Executed with params: ' + value);
           var params = JSON.parse(value);
+          severities = [
+                {name: 'not_classified'},
+                {name: 'information'},
+                {name: 'warning'},
+                {name: 'average'},
+                {name: 'high'},
+                {name: 'disaster'}
+          ];
           
           if (!params.URL) {
               throw 'Cannot get ntfy url!';
@@ -41,22 +63,27 @@ zabbix_export:
               request.addHeader('Title: Zabbix');
           }
 
-          //make sure severity is a number (helpful when testing)
-          if (isNaN(parseInt(params.Nseverity))) {
-              params.Nseverity = 0;
+          // Determine Priority, or just use 'default' if not chosen by user
+          // Priority defined by: https://docs.ntfy.sh/publish/#message-priority
+          priority = params['Priority_' + severities[params.Nseverity].name] || 'default';
+          if (priority !== 'min' && priority !== 'low' && priority !== 'default' && priority !== 'high' && priority !== 'max' && priority !== 'urgent'){
+              throw '"priority" should be min, low, default, high, max, or urgent';
           }
 
-          if (params.Nseverity === 0) {
-            request.addHeader('X-Priority: 3');
-          } else {
-            request.addHeader('X-Priority: ' + params.Nseverity);
-          }
+          request.addHeader('X-Priority: ' + priority);
 
           if (params.Token && params.Token !== '') {
               request.addHeader('Authorization: Bearer ' + params.Token);
           } else if (params.Username && params.Password && params.Username !== '' && params.Password !== '') {
               request.setHttpAuth(HTTPAUTH_BASIC, params.Username, params.Password);
           }
+
+          if (params.ZabbixURL) {
+              request.addHeader('Actions: view, Open Zabbix, ' + params.ZabbixURL);
+          }
+
+          // Icon path may change, but I'm not sure of a better location
+          request.addHeader('Icon: https://git.zabbix.com/projects/ZBX/repos/zabbix/raw/ui/assets/img/touch-icon-192x192.png?at=refs%2Fheads%2Fmaster')
 
           //if a topic is provided, include this in the URL, we assume that the Macro would just be the server, not including a topic
           if (params.Topic && params.Topic !== '') {
