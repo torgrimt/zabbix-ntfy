@@ -34,20 +34,6 @@ zabbix_export:
           value: '{$ZABBIX.URL}'
         - name: Nseverity
           value: '{EVENT.NSEVERITY}'
-        - name: Priority_average
-          value: default
-        - name: Priority_disaster
-          value: max
-        - name: Priority_high
-          value: high
-        - name: Priority_information
-          value: min
-        - name: Priority_not_classified
-          value: low
-        - name: Priority_resolved
-          value: low
-        - name: Priority_warning
-          value: low
       script: |
         try {
           Zabbix.log(4, '[ ntfy Webhook ] Executed with params: ' + value);
