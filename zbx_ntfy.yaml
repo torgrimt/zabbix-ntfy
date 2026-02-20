@@ -36,7 +36,6 @@ zabbix_export:
           value: '{$NTFY.USER}'
         - name: ZabbixURL
           value: '{$ZABBIX.URL}'
-          value: '{ALERT.SENDTO}'
       script: |
         try {
           Zabbix.log(4, '[ ntfy Webhook ] Executed with params: ' + value);
