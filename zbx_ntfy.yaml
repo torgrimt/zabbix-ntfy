@@ -26,6 +26,8 @@ zabbix_export:
           value: min
         - name: Subject
           value: '{ALERT.SUBJECT}'
+        - name: Tags
+          value: '{EVENT.TAGS}'
         - name: Token
           value: '{$NTFY.TOKEN}'
         - name: Topic
@@ -89,6 +91,10 @@ zabbix_export:
         
           request.addHeader('X-Priority: ' + priority);
         
+          if (params.Tags && params.Tags !== '') {
+              request.addHeader('X-Tags: ' + params.Tags);
+          }
+        
           if (params.Token && params.Token !== '') {
               request.addHeader('Authorization: Bearer ' + params.Token);
           } else if (params.Username && params.Password && params.Username !== '' && params.Password !== '') {
@@ -114,6 +120,7 @@ zabbix_export:
             Zabbix.log(3, '[ ntfy webhook ] notification failed: ' + error);
             throw 'Sending failed: ' + error;
         }
+      process_tags: 'YES'
       message_templates:
         - event_source: TRIGGERS
           operation_mode: PROBLEM
