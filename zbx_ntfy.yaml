@@ -4,6 +4,8 @@ zabbix_export:
     - name: ntfy.sh
       type: WEBHOOK
       parameters:
+        - name: HTTPProxy
+          value: '{$HTTP_PROXY}'
         - name: Message
           value: '{ALERT.MESSAGE}'
         - name: Nseverity
