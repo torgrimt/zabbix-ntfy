@@ -120,7 +120,6 @@ zabbix_export:
             Zabbix.log(3, '[ ntfy webhook ] notification failed: ' + error);
             throw 'Sending failed: ' + error;
         }
-      process_tags: 'YES'
       message_templates:
         - event_source: TRIGGERS
           operation_mode: PROBLEM
