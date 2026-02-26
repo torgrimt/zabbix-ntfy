@@ -12,26 +12,8 @@ zabbix_export:
           value: '{EVENT.NSEVERITY}'
         - name: Password
           value: '{$NTFY.PASS}'
-        - name: Priority_average
-          value: min
-        - name: Priority_disaster
-          value: default
-        - name: Priority_high
-          value: default
-        - name: Priority_information
-          value: min
-        - name: Priority_not_classified
-          value: min
-        - name: Priority_resolved
-          value: min
-        - name: Priority_warning
-          value: min
-        - name: SequenceID
-          value: '{EVENT.ID}'
         - name: Subject
           value: '{ALERT.SUBJECT}'
-        - name: Tags
-          value: '{EVENT.TAGS}'
         - name: Token
           value: '{$NTFY.TOKEN}'
         - name: Topic
@@ -44,175 +26,63 @@ zabbix_export:
           value: '{$ZABBIX.URL}'
       script: |
         try {
-          Zabbix.log(4, '[ ntfy Webhook ] Executed with params: ' + value);
-          var params = JSON.parse(value);
-          severities = [
-                {name: 'not_classified'},
-                {name: 'information'},
-                {name: 'warning'},
-                {name: 'average'},
-                {name: 'high'},
-                {name: 'disaster'}
-          ];
-          
-          // Check if a value is an int for input validation
-          function isInt(value) {
-            return !isNaN(value) && 
-                  parseInt(Number(value)) == value && 
-                  !isNaN(parseInt(value, 10));
-          }
-        
-          // Input validation
-          if (!params.URL) {
-              throw 'Cannot get ntfy url!';
-          }
-        
-          if (!isInt(params.Nseverity) || params.Nseverity < 0 || params.Nseverity > 5){
-              throw 'Nseverity value must be passed as an int from 0-5';
-          }
-        
-          var response, request = new HttpRequest();
-          // Add required headers for Cloudflare
-          request.addHeader('User-Agent: Zabbix');
-          request.addHeader('Content-Type: text/plain');
-          // Check for proxy
-          if (typeof params.HTTPProxy === 'string' && params.HTTPProxy.trim() !== '') {
-              request.setProxy(params.HTTPProxy);
-          }
-        
-          if (params.Subject && params.Subject !== '') {
-              request.addHeader('Title: ' + params.Subject);
-          } else {
-              request.addHeader('Title: Zabbix');
-          }
-        
-          // Determine Priority, or just use 'default' if not chosen by user
-          // Priority defined by: https://docs.ntfy.sh/publish/#message-priority
-          priority = params['Priority_' + severities[params.Nseverity].name] || 'default';
-          if (priority !== 'min' && priority !== 'low' && priority !== 'default' && priority !== 'high' && priority !== 'max' && priority !== 'urgent'){
-              throw '"priority" should be min, low, default, high, max, or urgent';
-          }
-        
-          request.addHeader('X-Priority: ' + priority);
-        
-          if (params.SequenceID && params.SequenceID !== '') {
-              request.addHeader('X-Sequence-ID: ' + params.SequenceID);
-          }
-          
-          if (params.Tags && params.Tags !== '') {
-              request.addHeader('X-Tags: ' + params.Tags);
-          }
-        
-          if (params.Token && params.Token !== '') {
-              request.addHeader('Authorization: Bearer ' + params.Token);
-          } else if (params.Username && params.Password && params.Username !== '' && params.Password !== '') {
-              request.setHttpAuth(HTTPAUTH_BASIC, params.Username, params.Password);
-          }
-        
-          if (params.ZabbixURL) {
-              request.addHeader('Actions: view, Open Zabbix, ' + params.ZabbixURL);
-          }
-        
-          // Icon path may change, but I'm not sure of a better location
-          request.addHeader('Icon: https://git.zabbix.com/projects/ZBX/repos/zabbix/raw/ui/assets/img/touch-icon-192x192.png?at=refs%2Fheads%2Fmaster')
-        
-          //if a topic is provided, include this in the URL, we assume that the Macro would just be the server, not including a topic
-          if (params.Topic && params.Topic !== '') {
-              params.URL = params.URL + '/' + params.Topic;
-          }
-          
-          response = request.post(params.URL, params.Message);
-          return true;
+            var params = JSON.parse(value);
+            var req = new HttpRequest();
+
+            if (!params.URL || !params.Topic) {
+                throw 'Missing required URL or Topic!';
+            }
+
+            params.URL = params.URL.replace(/\/+$/, '');
+            var fullUrl = params.URL + '/' + encodeURIComponent(params.Topic);
+
+            var sevData = [
+                {prio: '1', emoji: 'grey_question'},
+                {prio: '2', emoji: 'information_source'},
+                {prio: '3', emoji: 'warning'},
+                {prio: '3', emoji: 'exclamation'},
+                {prio: '4', emoji: 'bangbang'},
+                {prio: '5', emoji: 'rotating_light'}
+            ];
+
+            var severity = parseInt(params.Nseverity) || 0;
+            var currentSev = sevData[severity] || sevData[0];
+            var tags = currentSev.emoji;
+
+            if (params.Subject.toLowerCase().indexOf('resolved') !== -1) {
+                tags += ',white_check_mark';
+            }
+
+            req.addHeader('User-Agent: Zabbix');
+            req.addHeader('Content-Type: text/plain');
+            req.addHeader('Title: ' + params.Subject);
+            req.addHeader('X-Priority: ' + currentSev.prio);
+            req.addHeader('X-Tags: ' + tags);
+
+            if (params.HTTPProxy) { req.setProxy(params.HTTPProxy); }
+
+            if (params.Token) {
+                req.addHeader('Authorization: Bearer ' + params.Token);
+            } else if (params.Username && params.Password) {
+                req.setHttpAuth(HTTPAUTH_BASIC, params.Username, params.Password);
+            }
+
+            if (params.ZabbixURL) { req.addHeader('Click: ' + params.ZABBIX.URL); }
+
+            var logParams = JSON.parse(value);
+            delete logParams.Token;
+            delete logParams.Password;
+            Zabbix.log(4, '[ ntfy Webhook ] Sending to: ' + fullUrl + ' with params: ' + JSON.stringify(logParams));
+
+            var response = req.post(fullUrl, params.Message);
+
+            if (req.getStatus() < 200 || req.getStatus() >= 300) {
+                throw 'HTTP response code: ' + req.getStatus() + '. Response: ' + response;
+            }
+
+            return true;
         }
         catch (error) {
-            Zabbix.log(3, '[ ntfy webhook ] notification failed: ' + error);
+            Zabbix.log(3, '[ ntfy Webhook ] Notification failed: ' + error);
             throw 'Sending failed: ' + error;
         }
-      message_templates:
-        - event_source: TRIGGERS
-          operation_mode: PROBLEM
-          subject: 'Problem: {EVENT.NAME}'
-          message: |
-            Problem started at {EVENT.TIME} on {EVENT.DATE}
-            Problem name: {EVENT.NAME}
-            Host: {HOST.NAME}
-            Severity: {EVENT.SEVERITY}
-            Operational data: {EVENT.OPDATA}
-            Original problem ID: {EVENT.ID}
-            {TRIGGER.URL}
-        - event_source: TRIGGERS
-          operation_mode: RECOVERY
-          subject: 'Resolved in {EVENT.DURATION}: {EVENT.NAME}'
-          message: |
-            Problem has been resolved at {EVENT.RECOVERY.TIME} on {EVENT.RECOVERY.DATE}
-            Problem name: {EVENT.NAME}
-            Problem duration: {EVENT.DURATION}
-            Host: {HOST.NAME}
-            Severity: {EVENT.SEVERITY}
-            Original problem ID: {EVENT.ID}
-            {TRIGGER.URL}
-        - event_source: TRIGGERS
-          operation_mode: UPDATE
-          subject: 'Updated problem in {EVENT.AGE}: {EVENT.NAME}'
-          message: |
-            {USER.FULLNAME} {EVENT.UPDATE.ACTION} problem at {EVENT.UPDATE.DATE} {EVENT.UPDATE.TIME}.
-            {EVENT.UPDATE.MESSAGE}
-            
-            Current problem status is {EVENT.STATUS}, age is {EVENT.AGE}, acknowledged: {EVENT.ACK.STATUS}.
-        - event_source: DISCOVERY
-          operation_mode: PROBLEM
-          subject: 'Discovery: {DISCOVERY.DEVICE.STATUS} {DISCOVERY.DEVICE.IPADDRESS}'
-          message: |
-            Discovery rule: {DISCOVERY.RULE.NAME}
-            
-            Device IP: {DISCOVERY.DEVICE.IPADDRESS}
-            Device DNS: {DISCOVERY.DEVICE.DNS}
-            Device status: {DISCOVERY.DEVICE.STATUS}
-            Device uptime: {DISCOVERY.DEVICE.UPTIME}
-            
-            Device service name: {DISCOVERY.SERVICE.NAME}
-            Device service port: {DISCOVERY.SERVICE.PORT}
-            Device service status: {DISCOVERY.SERVICE.STATUS}
-            Device service uptime: {DISCOVERY.SERVICE.UPTIME}
-        - event_source: AUTOREGISTRATION
-          operation_mode: PROBLEM
-          subject: 'Autoregistration: {HOST.HOST}'
-          message: |
-            Host name: {HOST.HOST}
-            Host IP: {HOST.IP}
-            Agent port: {HOST.PORT}
-        - event_source: INTERNAL
-          operation_mode: PROBLEM
-        - event_source: INTERNAL
-          operation_mode: RECOVERY
-        - event_source: SERVICE
-          operation_mode: PROBLEM
-          subject: 'Service "{SERVICE.NAME}" problem: {EVENT.NAME}'
-          message: |
-            Service problem started at {EVENT.TIME} on {EVENT.DATE}
-            Service problem name: {EVENT.NAME}
-            Service: {SERVICE.NAME}
-            Severity: {EVENT.SEVERITY}
-            Original problem ID: {EVENT.ID}
-            Service description: {SERVICE.DESCRIPTION}
-            
-            {SERVICE.ROOTCAUSE}
-        - event_source: SERVICE
-          operation_mode: RECOVERY
-          subject: 'Service "{SERVICE.NAME}" resolved in {EVENT.DURATION}: {EVENT.NAME}'
-          message: |
-            Service "{SERVICE.NAME}" has been resolved at {EVENT.RECOVERY.TIME} on {EVENT.RECOVERY.DATE}
-            Problem name: {EVENT.NAME}
-            Problem duration: {EVENT.DURATION}
-            Severity: {EVENT.SEVERITY}
-            Original problem ID: {EVENT.ID}
-            Service description: {SERVICE.DESCRIPTION}
-        - event_source: SERVICE
-          operation_mode: UPDATE
-          subject: 'Changed "{SERVICE.NAME}" service status to {EVENT.UPDATE.SEVERITY} in {EVENT.AGE}'
-          message: |
-            Changed "{SERVICE.NAME}" service status to {EVENT.UPDATE.SEVERITY} at {EVENT.UPDATE.DATE} {EVENT.UPDATE.TIME}.
-            Current problem age is {EVENT.AGE}.
-            Service description: {SERVICE.DESCRIPTION}
-            
-            {SERVICE.ROOTCAUSE}

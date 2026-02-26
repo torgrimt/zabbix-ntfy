@@ -1,4 +1,4 @@
-# zabbix-ntfy 🚀 
+# zabbix-ntfy 🚀 (v1.1.0)
 **Want to send notifications from Zabbix to your phone or desktop?** 📱💻
 
 This is a Mediatype to add support for [ntfy.sh](https://ntfy.sh/) notifications into [Zabbix](https://www.zabbix.com/).
@@ -45,6 +45,9 @@ If notifications are not arriving, check the Zabbix Server logs (usually `/var/l
 This project is recognized and featured in the following locations:
 * **ntfy.sh Documentation**: Listed under [Integrations / Projects + scripts](https://docs.ntfy.sh/integrations/#projects-scripts).
 * **Zabbix Cookbook**: Discussed on the [Official Zabbix Forum](https://www.zabbix.com/forum/zabbix-cookbook/475107-how-to-add-the-ntfy-sh-notification-service-as-media-type-in-zabbix).
+
+## Honorable Mentions 🏅
+* **PaulSorensen**: A special thanks for his excellent work on his fork. Several features in v1.1.0 (emoji tagging, security logging, and HTTP status checks) were backported from his repository to improve the core experience for everyone.
 
 ---
 *Happy monitoring!* 📈
