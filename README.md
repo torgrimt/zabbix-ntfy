@@ -1,4 +1,4 @@
-# zabbix-ntfy (v1.0.0)
+# zabbix-ntfy 
 Mediatype to add support for [ntfy.sh](https://ntfy.sh/) notifications in [Zabbix](https://www.zabbix.com/).
 
 ## Setup
