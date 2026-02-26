@@ -8,6 +8,7 @@ Download the `zbx_ntfy.yaml` file, go to *Alerts -> Mediatypes* and click **Impo
 
 Go to: *Administration -> Macros* and create Macros:
 - `{$NTFY.URL}` The URL to send ntfy requests to. Just `https://ntfy.sh` if using the main instance.
+- `{$HTTP_PROXY}` The Proxy to use to send ntfy requests (optional).
 - `{$ALERT.SENDTO}` The ntfy topic to send the request to.
 - `{$ZABBIX.URL}` The URL to your Zabbix instance to include a clickable link in the notification (optional).
 - `{$NTFY.USER}` The username of the ntfy account to use (optional - basic authentication).
