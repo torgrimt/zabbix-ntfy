@@ -28,6 +28,8 @@ zabbix_export:
           value: '{EVENT.ID}'
         - name: Subject
           value: '{ALERT.SUBJECT}'
+        - name: Tags
+          value: '{EVENT.TAGS}'
         - name: Token
           value: '{$NTFY.TOKEN}'
         - name: Topic
@@ -93,6 +95,10 @@ zabbix_export:
         
           if (params.SequenceID && params.SequenceID !== '') {
               request.addHeader('X-Sequence-ID: ' + params.SequenceID);
+          }
+          
+          if (params.Tags && params.Tags !== '') {
+              request.addHeader('X-Tags: ' + params.Tags);
           }
         
           if (params.Token && params.Token !== '') {
