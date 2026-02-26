@@ -4,6 +4,8 @@ zabbix_export:
     - name: ntfy.sh
       type: WEBHOOK
       parameters:
+        - name: HTTPProxy
+          value: '{$HTTP_PROXY}'
         - name: Message
           value: '{ALERT.MESSAGE}'
         - name: Nseverity
@@ -24,8 +26,12 @@ zabbix_export:
           value: min
         - name: Priority_warning
           value: min
+        - name: SequenceID
+          value: '{EVENT.ID}'
         - name: Subject
           value: '{ALERT.SUBJECT}'
+        - name: Tags
+          value: '{EVENT.TAGS}'
         - name: Token
           value: '{$NTFY.TOKEN}'
         - name: Topic
@@ -88,6 +94,14 @@ zabbix_export:
           }
         
           request.addHeader('X-Priority: ' + priority);
+        
+          if (params.SequenceID && params.SequenceID !== '') {
+              request.addHeader('X-Sequence-ID: ' + params.SequenceID);
+          }
+          
+          if (params.Tags && params.Tags !== '') {
+              request.addHeader('X-Tags: ' + params.Tags);
+          }
         
           if (params.Token && params.Token !== '') {
               request.addHeader('Authorization: Bearer ' + params.Token);
