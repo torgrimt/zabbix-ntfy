@@ -1,4 +1,4 @@
-# zabbix-ntfy 🚀 (v1.1.0)
+# zabbix-ntfy 🚀 
 **Want to send notifications from Zabbix to your phone or desktop?** 📱💻
 
 This is a Mediatype to add support for [ntfy.sh](https://ntfy.sh/) notifications into [Zabbix](https://www.zabbix.com/).
