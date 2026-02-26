@@ -35,7 +35,7 @@ zabbix_export:
         - name: Token
           value: '{$NTFY.TOKEN}'
         - name: Topic
-          value: '{$ALERT.SENDTO}'
+          value: '{$NTFY.SENDTO}'
         - name: URL
           value: '{$NTFY.URL}'
         - name: Username
