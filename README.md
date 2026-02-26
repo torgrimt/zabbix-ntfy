@@ -1,6 +1,8 @@
 # zabbix-ntfy 
 Mediatype to add support for [ntfy.sh](https://ntfy.sh/) notifications in [Zabbix](https://www.zabbix.com/).
 
+> **Note:** This project was originally created for my personal setup, but I am more than happy to receive pull requests! A big thank you to everyone who has already contributed code and improvements.
+
 ## Setup
 1. Download the `zbx_ntfy.yaml` file.
 2. Go to **Alerts -> Media types** and click **Import**.
