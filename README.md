@@ -1,47 +1,37 @@
-# zabbix-ntfy
-Mediatype to add support for ntfy.sh services
-
-Seems like no one added support for [ntfy](https://ntfy.sh/) into [Zabbix](https://www.zabbix.com/) server, so I spent some time to get it working myself. Might as well share it. Pull requests are welcome.
+# zabbix-ntfy (v1.0.0)
+Mediatype to add support for [ntfy.sh](https://ntfy.sh/) notifications in [Zabbix](https://www.zabbix.com/).
 
 ## Setup
-Download the `zbx_ntfy.yaml` file, go to *Alerts -> Mediatypes* and click **Import**.
+1. Download the `zbx_ntfy.yaml` file.
+2. Go to **Alerts -> Media types** and click **Import**.
+![Media Types](./docs/img/media_types.png)
 
-Go to: *Administration -> Macros* and create Macros:
-- `{$NTFY.URL}` The URL to send ntfy requests to. Just `https://ntfy.sh` if using the main instance.
-- `{$NTFY.SENDTO}` The ntfy topic to send the request to.
-- `{$HTTP_PROXY}` The Proxy to use to send ntfy requests (optional).
-- `{$ZABBIX.URL}` The URL to your Zabbix instance to include a clickable link in the notification (optional).
-- `{$NTFY.USER}` The username of the ntfy account to use (optional - basic authentication).
-- `{$NTFY.PASS}` The password of the ntfy account to use (optional - basic authentication).
-- `{$NTFY.TOKEN}` The token created for the ntfy account to use (optional - token authentication).
+### Configuration (Global Macros)
+Go to **Administration -> Macros** and create the following macros to define your ntfy instance:
+![Macros](./docs/img/macros.png)
 
-Enable a trigger action to use the NTFY Media Type: *Alerts -> Actions -> Trigger Actions*.
+| Macro | Description | Requirement |
+| :--- | :--- | :--- |
+| `{$NTFY.URL}` | The URL to your ntfy instance (e.g., `https://ntfy.sh`). | **Required** |
+| `{$NTFY.SENDTO}` | Global topic name for all alerts. | Optional |
+| `{$NTFY.TOKEN}` | Auth token for ntfy (Bearer). | Optional |
+| `{$ZABBIX.URL}` | URL to your Zabbix (e.g., `https://zabbix.example.com`). | Optional |
 
-Go to *Users -> Users* and add the ntfy.sh Media Type to your user. The *Send To* field needs to be populated, but isn't used for anything.
+### User Settings
+Go to **Users -> Users**, select a user, and navigate to the **Media** tab.
+1. Add the **ntfy.sh** media type.
+2. The **Send to** field must be populated. If you use the global topic macro, just enter `dummy`.
+![User Media](./docs/img/user_media.png)
+
+## Troubleshooting
+If notifications are not arriving, check the Zabbix Server logs (usually `/var/log/zabbix/zabbix_server.log`).
+
+| Error Message | Possible Cause |
+| :--- | :--- |
+| `Cannot get ntfy url!` | The macro `{$NTFY.URL}` is missing or empty. |
+| `Nseverity value must be passed as an int` | Internal Zabbix error where severity mapping failed. |
+| `Sending failed: HTTP/1.1 401 Unauthorized` | Invalid Token or Username/Password. |
+| `Sending failed: HTTP/1.1 404 Not Found` | The Topic name or ntfy URL is incorrect. |
 
 ## Customization
-### Message Priority
-Priorities are, by default, based on the Zabbix Triggers priority. To adjust the levels, go to *Alerts -> Media Types -> ntfy.sh* and adjust the `Priority_*` parameters to your liking. These options match the [NTFY API](https://docs.ntfy.sh/publish/#message-priority).
-
-### Topic
-The topic to send the request to can be set globally or per user.
-#### Global
-This is the default. Set the global macro `{$NTFY.SENDTO}` to the topic that should be used for all users. Users can not configure individual topics.
-#### Per User
-The golbal macro `{$NTFY.SENDTO}` is not needed. The macro `{ALERT.SENDTO}` is used instead.
-
-Global steps to enable:
-1. Navigate to Administration --> Media Types --> ntfy.sh --> Parameters
-2. Change `Topic` to `{ALERT.SENDTO}`
-3. Click `Update`
-
-User steps to enable:
-1. Navigate to User settings --> Profile --> Media --> Edit ntfy.sh
-2. Set `Send To` to the topic to be used for this user
-3. Click `Update` in the popup
-4. Click `Update` below the List again
-
-## Also
-For more information and discussion, see:
-- [ntfy integration documentation](https://docs.ntfy.sh/integrations/#projects-scripts)
-- [Zabbix Forum post](https://www.zabbix.com/forum/zabbix-cookbook/475107-how-to-add-the-ntfy-sh-notification-service-as-media-type-in-zabbix)
+Priorities are mapped from Zabbix Severities to ntfy priorities (min, low, default, high, urgent). To change these, edit the Media Type parameters in Zabbix.
