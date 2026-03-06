@@ -59,7 +59,10 @@ zabbix_export:
             req.addHeader('X-Priority: ' + currentSev.prio);
             req.addHeader('X-Tags: ' + tags);
 
-            if (params.HTTPProxy) { req.setProxy(params.HTTPProxy); }
+            var proxy = (params.HTTPProxy || '').trim();
+            if (proxy && !/^\{\$[^}]+\}$/.test(proxy)) {
+              req.setProxy(proxy);
+            }
 
             if (params.Token) {
                 req.addHeader('Authorization: Bearer ' + params.Token);
@@ -67,7 +70,7 @@ zabbix_export:
                 req.setHttpAuth(HTTPAUTH_BASIC, params.Username, params.Password);
             }
 
-            if (params.ZabbixURL) { req.addHeader('Click: ' + params.ZABBIX.URL); }
+            if (params.ZabbixURL) { req.addHeader('Click: ' + params.ZabbixURL); }
 
             var logParams = JSON.parse(value);
             delete logParams.Token;
