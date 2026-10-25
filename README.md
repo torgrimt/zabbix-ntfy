@@ -1,53 +1,65 @@
-# zabbix-ntfy 🚀 
-**Want to send notifications from Zabbix to your phone or desktop?** 📱💻
+# zabbix-ntfy
 
-This is a Mediatype to add support for [ntfy.sh](https://ntfy.sh/) notifications into [Zabbix](https://www.zabbix.com/).
+A Zabbix webhook media type that sends notifications to [ntfy](https://ntfy.sh).
+Works with the ntfy apps for [iOS](https://apps.apple.com/nl/app/ntfy/id1625396347) and
+[Android](https://play.google.com/store/apps/details?id=io.heckel.ntfy), or anything else that
+subscribes to an ntfy topic.
 
-I'm using this integration with the ntfy apps for [iOS](https://apps.apple.com/nl/app/ntfy/id1625396347) and [Android](https://play.google.com/store/apps/details?id=io.heckel.ntfy). There are also several projects available for desktop notifications if you prefer to receive alerts on your computer.
+The project started as a personal setup and is maintained in spare time. Pull requests are welcome;
+there is no support commitment beyond best effort.
 
-> **Note:** This project was originally created for my personal setup, but I’m more than happy to receive pull requests! A huge thanks to everyone who has already contributed code and improvements. 🙏 
-> 
-> Please keep in mind that this is a hobby project fueled by spare time and curiosity. Since I don't have a dedicated QA department (it's just me), I have limited bandwidth to test every single commit or provide 24/7 support. Everything is handled on a **Best Effort™** basis—I’ll do my best to help out between coffee breaks and my real life! ☕🚀
+## Install
 
-## Setup 🛠️
-1. Download the `zbx_ntfy.yaml` file.
-2. In Zabbix, go to **Alerts -> Media types** and click **Import**.
-![Media Types](./docs/img/media_types.png)
+1. Download `zbx_ntfy.yaml`.
+2. In Zabbix go to **Alerts → Media types** and click **Import**.
+   ![Media types](./docs/img/media_types.png)
 
-### Configuration (Global Macros) ⚙️
-Go to **Administration -> Macros** and create the following macros to define your ntfy instance:
-![Macros](./docs/img/macros.png)
+## Configuration
 
-| Macro | Description | Requirement |
+### Global macros
+
+**Administration → Macros**. Only `{$NTFY.URL}` is required.
+
+| Macro | Required | Description |
 | :--- | :--- | :--- |
-| `{$NTFY.URL}` | The URL to your ntfy instance (e.g., `https://ntfy.sh`). | **Required** |
-| `{$NTFY.SENDTO}` | Global topic name for all alerts. | Optional |
-| `{$NTFY.TOKEN}` | Auth token for ntfy (Bearer). | Optional |
-| `{$ZABBIX.URL}` | URL to your Zabbix instance for clickable links. | Optional |
+| `{$NTFY.URL}` | yes | Base URL of your ntfy instance, e.g. `https://ntfy.sh`. |
+| `{$NTFY.SENDTO}` | no | Topic used for all alerts. Lets you keep one topic in one place instead of per user. |
+| `{$NTFY.TOKEN}` | no | ntfy access token, sent as `Authorization: Bearer <token>`. |
+| `{$NTFY.USER}` / `{$NTFY.PASS}` | no | Username and password for HTTP basic auth, used only when no token is set. |
+| `{$ZABBIX.URL}` | no | URL to your Zabbix frontend; sent as the `Click` header so the notification opens Zabbix. |
+| `{$HTTP_PROXY}` | no | Proxy for the webhook, e.g. `http://proxy.example:3128`. |
 
-### User Settings 👤
-Go to **Users -> Users**, select your user, and navigate to the **Media** tab.
+Auth is optional. Leave the token and user/password macros undefined if your topic allows anonymous
+publish — the webhook then sends no `Authorization` header at all.
+
+> **Upgrading from an earlier release:** the previous script sent the *literal* text
+> `Authorization: *** {$NTFY.TOKEN}` when the token macro was not defined, and `***` instead of
+> `Bearer` when it was. Both produced `401 Unauthorized`. Re-import `zbx_ntfy.yaml` and the problem
+> goes away.
+
+### User media
+
+**Users → Users → your user → Media**:
+
 1. Add the **ntfy.sh** media type.
-2. The **Send to** field must be populated. If you are using the global topic macro, you can just enter `dummy`.
-![User Media](./docs/img/user_media.png)
+2. **Send to** must contain a topic name. If you use `{$NTFY.SENDTO}`, any placeholder works
+   (`dummy` is fine) because the topic comes from the macro.
+   ![User media](./docs/img/user_media.png)
 
-## Troubleshooting 🔍
-If notifications are not arriving, check the Zabbix Server logs (usually `/var/log/zabbix/zabbix_server.log`).
+## Troubleshooting
 
-| Error Message | Possible Cause |
+Check **Reports → Action log** in the frontend, or `zabbix_server.log` on the server.
+
+| Message | Cause |
 | :--- | :--- |
-| `Cannot get ntfy url!` | The macro `{$NTFY.URL}` is missing or empty. |
-| `Nseverity value must be passed as an int` | Internal Zabbix error where severity mapping failed. |
-| `Sending failed: HTTP/1.1 401 Unauthorized` | Invalid Token or Username/Password. |
-| `Sending failed: HTTP/1.1 404 Not Found` | The Topic name or ntfy URL is incorrect. |
+| `Missing required URL or Topic!` | `{$NTFY.URL}` or the topic is empty. |
+| `Sending failed: HTTP response code: 401` | ntfy rejected the credentials. Either a wrong token, or the token macro is undefined in an older release (see upgrade note). |
+| `Sending failed: HTTP response code: 404` | Wrong topic or URL. |
+| `Nseverity value must be passed as an int` | Zabbix could not resolve `{EVENT.NSEVERITY}`; check the media type was imported for the same Zabbix version. |
 
-## Official Mentions & Community 🌍
-This project is recognized and featured in the following locations:
-* **ntfy.sh Documentation**: Listed under [Integrations / Projects + scripts](https://docs.ntfy.sh/integrations/#projects-scripts).
-* **Zabbix Cookbook**: Discussed on the [Official Zabbix Forum](https://www.zabbix.com/forum/zabbix-cookbook/475107-how-to-add-the-ntfy-sh-notification-service-as-media-type-in-zabbix).
+## Credits
 
-## Honorable Mentions 🏅
-* **[PaulSorensen](https://github.com/PaulSorensen/zabbix-ntfy)**: A special thanks for his excellent work on his fork. Several features (emoji tagging, security logging, and HTTP status checks) were backported from his repository to improve the core experience for everyone.
-
----
-*Happy monitoring!* 📈
+- [PaulSorensen/zabbix-ntfy](https://github.com/PaulSorensen/zabbix-ntfy) — emoji tags, credential
+  logging hygiene and HTTP status checking were backported from that fork.
+- Listed in the [ntfy integrations](https://docs.ntfy.sh/integrations/#projects-scripts) page and
+  discussed in the [Zabbix forum](https://www.zabbix.com/forum/zabbix-cookbook/475107-how-to-add-the-ntfy-sh-notification-service-as-media-type-in-zabbix).

@@ -59,28 +59,45 @@ zabbix_export:
             req.addHeader('X-Priority: ' + currentSev.prio);
             req.addHeader('X-Tags: ' + tags);
 
-            var proxy = (params.HTTPProxy || '').trim();
-            if (proxy && !/^\{\$[^}]+\}$/.test(proxy)) {
-              req.setProxy(proxy);
+            // A macro that is not defined arrives as its literal text, e.g.
+            // "{$NTFY.TOKEN}". Sending that as a credential makes ntfy answer 401.
+            // Treat macro-shaped and empty values as "not configured".
+            function opt(name) {
+                var v = (params[name] || '').trim();
+                return /^\{\$[^}]+\}$/.test(v) ? '' : v;
             }
 
-            if (params.Token) {
-                req.addHeader('Authorization: Bearer ' + params.Token);
-            } else if (params.Username && params.Password) {
-                req.setHttpAuth(HTTPAUTH_BASIC, params.Username, params.Password);
+            var proxy = opt('HTTPProxy');
+            var token = opt('Token');
+            var user = opt('Username');
+            var pass = opt('Password');
+            var zabbixUrl = opt('ZabbixURL');
+
+            if (proxy) {
+                req.setProxy(proxy);
             }
 
-            if (params.ZabbixURL) { req.addHeader('Click: ' + params.ZabbixURL); }
+            if (token) {
+                req.addHeader('Authorization: Bearer ' + token);
+            } else if (user && pass) {
+                req.setHttpAuth(HTTPAUTH_BASIC, user, pass);
+            }
+
+            if (zabbixUrl) {
+                req.addHeader('Click: ' + zabbixUrl);
+            }
 
             var logParams = JSON.parse(value);
             delete logParams.Token;
             delete logParams.Password;
-            Zabbix.log(4, '[ ntfy Webhook ] Sending to: ' + fullUrl + ' with params: ' + JSON.stringify(logParams));
+            Zabbix.log(4, '[ ntfy Webhook ] Sending to: ' + fullUrl +
+                          ' with params: ' + JSON.stringify(logParams));
 
             var response = req.post(fullUrl, params.Message);
 
             if (req.getStatus() < 200 || req.getStatus() >= 300) {
-                throw 'HTTP response code: ' + req.getStatus() + '. Response: ' + response;
+                throw 'HTTP response code: ' + req.getStatus() +
+                      '. Response: ' + response;
             }
 
             return true;
